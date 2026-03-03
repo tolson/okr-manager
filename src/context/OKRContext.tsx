@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
 import type { Objective, Team, Individual, KeyResult, OKRLevel } from '../types';
 import { loadData, saveData, generateId, getCurrentQuarter } from '../utils/storage';
+import { useAuth } from './AuthContext';
 
 interface OKRContextType {
   objectives: Objective[];
@@ -30,38 +31,75 @@ interface OKRContextType {
 const OKRContext = createContext<OKRContextType | undefined>(undefined);
 
 export function OKRProvider({ children }: { children: ReactNode }) {
-  const [objectives, setObjectives] = useState<Objective[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [individuals, setIndividuals] = useState<Individual[]>([]);
+  const { currentOrganization } = useAuth();
+  const [allObjectives, setAllObjectives] = useState<Objective[]>([]);
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [allIndividuals, setAllIndividuals] = useState<Individual[]>([]);
   const [selectedQuarter, setSelectedQuarter] = useState(getCurrentQuarter());
 
   useEffect(() => {
     const data = loadData();
-    setObjectives(data.objectives);
-    setTeams(data.teams);
-    setIndividuals(data.individuals);
+    setAllObjectives(data.objectives);
+    setAllTeams(data.teams);
+    setAllIndividuals(data.individuals);
   }, []);
 
   useEffect(() => {
-    saveData({ objectives, teams, individuals });
-  }, [objectives, teams, individuals]);
+    saveData({ objectives: allObjectives, teams: allTeams, individuals: allIndividuals });
+  }, [allObjectives, allTeams, allIndividuals]);
+
+  // Filter data by current organization
+  const teams = useMemo(() => {
+    if (!currentOrganization) return [];
+    return allTeams.filter(t => t.organizationId === currentOrganization.id);
+  }, [allTeams, currentOrganization]);
+
+  const teamIds = useMemo(() => new Set(teams.map(t => t.id)), [teams]);
+
+  const individuals = useMemo(() => {
+    return allIndividuals.filter(i => teamIds.has(i.teamId));
+  }, [allIndividuals, teamIds]);
+
+  const individualIds = useMemo(() => new Set(individuals.map(i => i.id)), [individuals]);
+
+  const objectives = useMemo(() => {
+    return allObjectives.filter(obj => {
+      if (obj.level === 'company') {
+        // Company objectives: check if any team objective that links to this belongs to our org
+        // Or if it was created by our org (we'll need to check children)
+        const hasOrgTeamChild = allObjectives.some(
+          child => child.parentId === obj.id && child.teamId && teamIds.has(child.teamId)
+        );
+        // Also include if it has no team/individual assignment (org-level)
+        const isOrphan = !obj.teamId && !obj.ownerId;
+        return hasOrgTeamChild || isOrphan;
+      }
+      if (obj.level === 'team' && obj.teamId) {
+        return teamIds.has(obj.teamId);
+      }
+      if (obj.level === 'individual' && obj.ownerId) {
+        return individualIds.has(obj.ownerId);
+      }
+      return false;
+    });
+  }, [allObjectives, teamIds, individualIds]);
 
   const addObjective = (objective: Omit<Objective, 'id'>) => {
     const newObjective: Objective = {
       ...objective,
       id: generateId(),
     };
-    setObjectives((prev) => [...prev, newObjective]);
+    setAllObjectives((prev) => [...prev, newObjective]);
   };
 
   const updateObjective = (id: string, updates: Partial<Objective>) => {
-    setObjectives((prev) =>
+    setAllObjectives((prev) =>
       prev.map((obj) => (obj.id === id ? { ...obj, ...updates } : obj))
     );
   };
 
   const deleteObjective = (id: string) => {
-    setObjectives((prev) => prev.filter((obj) => obj.id !== id));
+    setAllObjectives((prev) => prev.filter((obj) => obj.id !== id));
   };
 
   const addKeyResult = (objectiveId: string, keyResult: Omit<KeyResult, 'id'>) => {
@@ -69,7 +107,7 @@ export function OKRProvider({ children }: { children: ReactNode }) {
       ...keyResult,
       id: generateId(),
     };
-    setObjectives((prev) =>
+    setAllObjectives((prev) =>
       prev.map((obj) =>
         obj.id === objectiveId
           ? { ...obj, keyResults: [...obj.keyResults, newKeyResult] }
@@ -79,7 +117,7 @@ export function OKRProvider({ children }: { children: ReactNode }) {
   };
 
   const updateKeyResult = (objectiveId: string, keyResultId: string, updates: Partial<KeyResult>) => {
-    setObjectives((prev) =>
+    setAllObjectives((prev) =>
       prev.map((obj) =>
         obj.id === objectiveId
           ? {
@@ -94,7 +132,7 @@ export function OKRProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteKeyResult = (objectiveId: string, keyResultId: string) => {
-    setObjectives((prev) =>
+    setAllObjectives((prev) =>
       prev.map((obj) =>
         obj.id === objectiveId
           ? { ...obj, keyResults: obj.keyResults.filter((kr) => kr.id !== keyResultId) }
@@ -104,21 +142,23 @@ export function OKRProvider({ children }: { children: ReactNode }) {
   };
 
   const addTeam = (name: string) => {
+    if (!currentOrganization) return;
     const newTeam: Team = {
       id: generateId(),
       name,
+      organizationId: currentOrganization.id,
     };
-    setTeams((prev) => [...prev, newTeam]);
+    setAllTeams((prev) => [...prev, newTeam]);
   };
 
   const updateTeam = (id: string, name: string) => {
-    setTeams((prev) =>
+    setAllTeams((prev) =>
       prev.map((team) => (team.id === id ? { ...team, name } : team))
     );
   };
 
   const deleteTeam = (id: string) => {
-    setTeams((prev) => prev.filter((team) => team.id !== id));
+    setAllTeams((prev) => prev.filter((team) => team.id !== id));
   };
 
   const addIndividual = (name: string, teamId: string) => {
@@ -127,17 +167,17 @@ export function OKRProvider({ children }: { children: ReactNode }) {
       name,
       teamId,
     };
-    setIndividuals((prev) => [...prev, newIndividual]);
+    setAllIndividuals((prev) => [...prev, newIndividual]);
   };
 
   const updateIndividual = (id: string, name: string, teamId: string) => {
-    setIndividuals((prev) =>
+    setAllIndividuals((prev) =>
       prev.map((ind) => (ind.id === id ? { ...ind, name, teamId } : ind))
     );
   };
 
   const deleteIndividual = (id: string) => {
-    setIndividuals((prev) => prev.filter((ind) => ind.id !== id));
+    setAllIndividuals((prev) => prev.filter((ind) => ind.id !== id));
   };
 
   const getObjectivesByLevel = (level: OKRLevel) => {

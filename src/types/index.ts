@@ -1,3 +1,17 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  organizationId: string;
+  role: 'admin' | 'member';
+  passwordHash: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+}
+
 export interface KeyResult {
   id: string;
   title: string;
@@ -21,6 +35,7 @@ export interface Objective {
 export interface Team {
   id: string;
   name: string;
+  organizationId: string;
 }
 
 export interface Individual {

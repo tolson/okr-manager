@@ -1,10 +1,18 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useOKR } from '../../context/OKRContext';
+import { useAuth } from '../../context/AuthContext';
 import { getQuarterOptions } from '../../utils/storage';
 
 export function Navbar() {
   const { selectedQuarter, setSelectedQuarter } = useOKR();
+  const { currentUser, currentOrganization, logout } = useAuth();
+  const navigate = useNavigate();
   const quarters = getQuarterOptions();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-4 py-2 rounded-lg transition-colors ${
@@ -40,22 +48,37 @@ export function Navbar() {
               </NavLink>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <label htmlFor="quarter" className="text-sm text-gray-600">
-              Quarter:
-            </label>
-            <select
-              id="quarter"
-              value={selectedQuarter}
-              onChange={(e) => setSelectedQuarter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {quarters.map((q) => (
-                <option key={q} value={q}>
-                  {q}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <label htmlFor="quarter" className="text-sm text-gray-600">
+                Quarter:
+              </label>
+              <select
+                id="quarter"
+                value={selectedQuarter}
+                onChange={(e) => setSelectedQuarter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {quarters.map((q) => (
+                  <option key={q} value={q}>
+                    {q}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-4 border-l border-gray-200 pl-6">
+              <div className="text-right">
+                <div className="text-sm font-medium text-gray-900">{currentUser?.name}</div>
+                <div className="text-xs text-gray-500">{currentOrganization?.name}</div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>
