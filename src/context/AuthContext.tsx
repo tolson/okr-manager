@@ -39,6 +39,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user && org) {
         setCurrentUser(user);
         setCurrentOrganization(org);
+        pendo.identify({
+          visitor: {
+            id: user.id,
+            email: user.email,
+            full_name: user.name,
+            role: user.role,
+            organizationId: user.organizationId,
+          },
+          account: {
+            id: org.id,
+            name: org.name,
+          },
+        });
       } else {
         clearSession();
       }
@@ -68,6 +81,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUser(user);
     setCurrentOrganization(org);
     saveSession({ userId: user.id, organizationId: org.id });
+    pendo.identify({
+      visitor: {
+        id: user.id,
+        email: user.email,
+        full_name: user.name,
+        role: user.role,
+        organizationId: user.organizationId,
+      },
+      account: {
+        id: org.id,
+        name: org.name,
+      },
+    });
 
     return { success: true };
   };
@@ -112,6 +138,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUser(newUser);
     setCurrentOrganization(newOrg);
     saveSession({ userId: newUser.id, organizationId: newOrg.id });
+    pendo.identify({
+      visitor: {
+        id: newUser.id,
+        email: newUser.email,
+        full_name: newUser.name,
+        role: newUser.role,
+        organizationId: newUser.organizationId,
+      },
+      account: {
+        id: newOrg.id,
+        name: newOrg.name,
+      },
+    });
 
     return { success: true };
   };
