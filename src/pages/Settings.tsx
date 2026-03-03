@@ -27,6 +27,9 @@ export function Settings() {
     e.preventDefault();
     if (newTeamName.trim()) {
       addTeam(newTeamName.trim());
+      pendo.track('team_created', {
+        team_name: newTeamName.trim(),
+      });
       setNewTeamName('');
     }
   };
@@ -34,12 +37,19 @@ export function Settings() {
   const handleUpdateTeam = (id: string) => {
     if (editingTeamName.trim()) {
       updateTeam(id, editingTeamName.trim());
+      pendo.track('team_updated', {
+        team_id: id,
+        new_team_name: editingTeamName.trim(),
+      });
     }
     setEditingTeamId(null);
   };
 
   const handleDeleteTeam = (id: string) => {
     if (confirm('Are you sure? This will not delete team OKRs but they will lose their team association.')) {
+      pendo.track('team_deleted', {
+        team_id: id,
+      });
       deleteTeam(id);
     }
   };
@@ -48,6 +58,9 @@ export function Settings() {
     e.preventDefault();
     if (newIndividualName.trim() && newIndividualTeamId) {
       addIndividual(newIndividualName.trim(), newIndividualTeamId);
+      pendo.track('individual_created', {
+        team_id: newIndividualTeamId,
+      });
       setNewIndividualName('');
       setNewIndividualTeamId('');
     }
@@ -56,12 +69,21 @@ export function Settings() {
   const handleUpdateIndividual = (id: string) => {
     if (editingIndividualName.trim() && editingIndividualTeamId) {
       updateIndividual(id, editingIndividualName.trim(), editingIndividualTeamId);
+      pendo.track('individual_updated', {
+        individual_id: id,
+        new_team_id: editingIndividualTeamId,
+      });
     }
     setEditingIndividualId(null);
   };
 
   const handleDeleteIndividual = (id: string) => {
     if (confirm('Are you sure? This will not delete individual OKRs but they will lose their owner association.')) {
+      const individual = individuals.find((i) => i.id === id);
+      pendo.track('individual_deleted', {
+        individual_id: id,
+        team_id: individual?.teamId,
+      });
       deleteIndividual(id);
     }
   };

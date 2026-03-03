@@ -27,6 +27,10 @@ export function Register() {
 
     const result = register(name, email, password, organizationName);
     if (result.success) {
+      pendo.track('user_registered', {
+        user_role: 'admin',
+        organization_name: organizationName,
+      });
       navigate('/');
     } else {
       setError(result.error || 'Registration failed');

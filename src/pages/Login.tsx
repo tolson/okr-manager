@@ -20,8 +20,12 @@ export function Login() {
 
     const result = login(email, password);
     if (result.success) {
+      pendo.track('user_login_succeeded', {});
       navigate('/');
     } else {
+      pendo.track('user_login_failed', {
+        error_reason: result.error || 'Login failed',
+      });
       setError(result.error || 'Login failed');
     }
   };

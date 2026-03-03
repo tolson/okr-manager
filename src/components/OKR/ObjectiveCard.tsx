@@ -17,6 +17,12 @@ export function ObjectiveCard({ objective, onEdit }: ObjectiveCardProps) {
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this objective?')) {
+      pendo.track('objective_deleted', {
+        level: objective.level,
+        quarter: objective.quarter,
+        key_results_count: objective.keyResults.length,
+        objective_id: objective.id,
+      });
       deleteObjective(objective.id);
     }
   };

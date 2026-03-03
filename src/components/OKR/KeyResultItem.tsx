@@ -16,13 +16,29 @@ export function KeyResultItem({ keyResult, objectiveId }: KeyResultItemProps) {
   const handleUpdateProgress = () => {
     const newValue = parseFloat(currentValue);
     if (!isNaN(newValue)) {
+      const previousValue = keyResult.current;
       updateKeyResult(objectiveId, keyResult.id, { current: newValue });
+      pendo.track('key_result_progress_updated', {
+        objective_id: objectiveId,
+        key_result_id: keyResult.id,
+        previous_value: previousValue,
+        new_value: newValue,
+        target_value: keyResult.target,
+        unit: keyResult.unit,
+        percent_complete: keyResult.target > 0 ? Math.round((newValue / keyResult.target) * 100) : 0,
+        is_completed: newValue >= keyResult.target,
+      });
     }
     setIsEditing(false);
   };
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this key result?')) {
+      pendo.track('key_result_deleted', {
+        objective_id: objectiveId,
+        key_result_id: keyResult.id,
+        percent_complete_at_deletion: keyResult.target > 0 ? Math.round((keyResult.current / keyResult.target) * 100) : 0,
+      });
       deleteKeyResult(objectiveId, keyResult.id);
     }
   };

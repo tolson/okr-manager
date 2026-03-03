@@ -70,8 +70,21 @@ export function ObjectiveForm({ isOpen, onClose, level, editingObjective }: Obje
 
     if (editingObjective) {
       updateObjective(editingObjective.id, objectiveData);
+      pendo.track('objective_updated', {
+        level,
+        quarter,
+        has_parent_alignment: !!parentId,
+        objective_id: editingObjective.id,
+      });
     } else {
       addObjective(objectiveData);
+      pendo.track('objective_created', {
+        level,
+        quarter,
+        has_parent_alignment: !!parentId,
+        team_id: teamId || undefined,
+        owner_id: ownerId || undefined,
+      });
     }
 
     onClose();
