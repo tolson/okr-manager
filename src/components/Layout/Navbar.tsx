@@ -56,7 +56,14 @@ export function Navbar() {
               <select
                 id="quarter"
                 value={selectedQuarter}
-                onChange={(e) => setSelectedQuarter(e.target.value)}
+                onChange={(e) => {
+                  const newQuarter = e.target.value;
+                  pendo.track("quarter_changed", {
+                    previous_quarter: selectedQuarter,
+                    new_quarter: newQuarter,
+                  });
+                  setSelectedQuarter(newQuarter);
+                }}
                 className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {quarters.map((q) => (

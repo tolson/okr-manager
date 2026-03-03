@@ -26,6 +26,10 @@ export function Settings() {
   const handleAddTeam = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTeamName.trim()) {
+      pendo.track("team_created", {
+        team_name: newTeamName.trim(),
+        existing_team_count: teams.length,
+      });
       addTeam(newTeamName.trim());
       setNewTeamName('');
     }
@@ -33,6 +37,9 @@ export function Settings() {
 
   const handleUpdateTeam = (id: string) => {
     if (editingTeamName.trim()) {
+      pendo.track("team_updated", {
+        team_id: id,
+      });
       updateTeam(id, editingTeamName.trim());
     }
     setEditingTeamId(null);
@@ -40,6 +47,11 @@ export function Settings() {
 
   const handleDeleteTeam = (id: string) => {
     if (confirm('Are you sure? This will not delete team OKRs but they will lose their team association.')) {
+      const associatedCount = individuals.filter((i) => i.teamId === id).length;
+      pendo.track("team_deleted", {
+        team_id: id,
+        associated_individuals_count: associatedCount,
+      });
       deleteTeam(id);
     }
   };
@@ -47,6 +59,10 @@ export function Settings() {
   const handleAddIndividual = (e: React.FormEvent) => {
     e.preventDefault();
     if (newIndividualName.trim() && newIndividualTeamId) {
+      pendo.track("individual_created", {
+        team_id: newIndividualTeamId,
+        existing_individual_count: individuals.length,
+      });
       addIndividual(newIndividualName.trim(), newIndividualTeamId);
       setNewIndividualName('');
       setNewIndividualTeamId('');
@@ -55,6 +71,12 @@ export function Settings() {
 
   const handleUpdateIndividual = (id: string) => {
     if (editingIndividualName.trim() && editingIndividualTeamId) {
+      const currentIndividual = individuals.find((i) => i.id === id);
+      const teamChanged = currentIndividual ? currentIndividual.teamId !== editingIndividualTeamId : false;
+      pendo.track("individual_updated", {
+        individual_id: id,
+        team_changed: teamChanged,
+      });
       updateIndividual(id, editingIndividualName.trim(), editingIndividualTeamId);
     }
     setEditingIndividualId(null);
@@ -62,6 +84,11 @@ export function Settings() {
 
   const handleDeleteIndividual = (id: string) => {
     if (confirm('Are you sure? This will not delete individual OKRs but they will lose their owner association.')) {
+      const individual = individuals.find((i) => i.id === id);
+      pendo.track("individual_deleted", {
+        individual_id: id,
+        team_id: individual?.teamId || "",
+      });
       deleteIndividual(id);
     }
   };
