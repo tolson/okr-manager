@@ -91,14 +91,6 @@ export function Dashboard() {
       }
     });
 
-    pendo.track("okr_exported", {
-      quarter: selectedQuarter,
-      companyOKRCount: companyOKRs.length,
-      teamOKRCount: teamOKRs.length,
-      individualOKRCount: individualOKRs.length,
-      totalOKRCount: quarterObjectives.length,
-    });
-
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -108,6 +100,16 @@ export function Dashboard() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    if (window.pendo) {
+      window.pendo.track("okr_exported", {
+        quarter: selectedQuarter,
+        companyOKRCount: companyOKRs.length,
+        teamOKRCount: teamOKRs.length,
+        individualOKRCount: individualOKRs.length,
+        totalOKRCount: quarterObjectives.length,
+      });
+    }
   };
 
   const levelProgress = [
