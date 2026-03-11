@@ -66,6 +66,50 @@ export function Dashboard() {
     },
   ];
 
+  const exportToMarkdown = () => {
+    let markdown = `# OKRs for ${selectedQuarter}\n\n`;
+
+    const sections = [
+      { title: 'Company Objectives', okrs: companyOKRs },
+      { title: 'Team Objectives', okrs: teamOKRs },
+      { title: 'Individual Objectives', okrs: individualOKRs },
+    ];
+
+    sections.forEach(({ title, okrs }) => {
+      if (okrs.length > 0) {
+        markdown += `## ${title}\n\n`;
+        okrs.forEach((obj) => {
+          markdown += `### ${obj.title}\n`;
+          if (obj.keyResults.length > 0) {
+            obj.keyResults.forEach((kr) => {
+              const progress = kr.target > 0 ? Math.round((kr.current / kr.target) * 100) : 0;
+              markdown += `- ${kr.title}: ${kr.current}/${kr.target} ${kr.unit} (${progress}%)\n`;
+            });
+          }
+          markdown += '\n';
+        });
+      }
+    });
+
+    pendo.track("okr_exported", {
+      quarter: selectedQuarter,
+      companyOKRCount: companyOKRs.length,
+      teamOKRCount: teamOKRs.length,
+      individualOKRCount: individualOKRs.length,
+      totalOKRCount: quarterObjectives.length,
+    });
+
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `okrs-${selectedQuarter}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const levelProgress = [
     {
       label: 'Company',
@@ -86,9 +130,19 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Overview for {selectedQuarter}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Overview for {selectedQuarter}</p>
+        </div>
+        {quarterObjectives.length > 0 && (
+          <button
+            onClick={exportToMarkdown}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Export to Markdown
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
