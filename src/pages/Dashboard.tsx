@@ -93,10 +93,10 @@ export function Dashboard() {
 
     pendo.track("okr_exported", {
       quarter: selectedQuarter,
-      companyOKRCount: companyOKRs.length,
-      teamOKRCount: teamOKRs.length,
-      individualOKRCount: individualOKRs.length,
-      totalOKRCount: quarterObjectives.length,
+      companyCount: companyOKRs.length,
+      teamCount: teamOKRs.length,
+      individualCount: individualOKRs.length,
+      totalObjectives: quarterObjectives.length,
     });
 
     const blob = new Blob([markdown], { type: 'text/markdown' });
