@@ -68,10 +68,34 @@ export function ObjectiveForm({ isOpen, onClose, level, editingObjective }: Obje
       keyResults: editingObjective?.keyResults || [],
     };
 
+    const parentObjective = parentId ? objectives.find((o) => o.id === parentId) : null;
+
     if (editingObjective) {
       updateObjective(editingObjective.id, objectiveData);
+      pendo.track("objective_updated", {
+        objective_level: level,
+        quarter,
+        has_parent_alignment: !!parentId,
+        parent_level: parentObjective?.level || "",
+      });
     } else {
       addObjective(objectiveData);
+      pendo.track("objective_created", {
+        objective_level: level,
+        quarter,
+        has_parent_alignment: !!parentId,
+        parent_level: parentObjective?.level || "",
+        has_team: !!(level === 'team' || level === 'individual' ? teamId : false),
+        has_owner: !!(level === 'individual' ? ownerId : false),
+      });
+    }
+
+    if (parentId) {
+      pendo.track("objective_alignment_set", {
+        child_level: level,
+        parent_level: parentObjective?.level || "",
+        quarter,
+      });
     }
 
     onClose();

@@ -7,7 +7,7 @@ interface KeyResultFormProps {
 }
 
 export function KeyResultForm({ objectiveId, onClose }: KeyResultFormProps) {
-  const { addKeyResult } = useOKR();
+  const { addKeyResult, objectives } = useOKR();
   const [title, setTitle] = useState('');
   const [target, setTarget] = useState('');
   const [unit, setUnit] = useState('');
@@ -20,6 +20,13 @@ export function KeyResultForm({ objectiveId, onClose }: KeyResultFormProps) {
         target: parseFloat(target),
         current: 0,
         unit: unit.trim() || 'units',
+      });
+      const objective = objectives.find((o) => o.id === objectiveId);
+      pendo.track("key_result_created", {
+        objective_level: objective?.level || "",
+        target_value: parseFloat(target),
+        unit: unit.trim() || "units",
+        quarter: objective?.quarter || "",
       });
       onClose();
     }

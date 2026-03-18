@@ -9,20 +9,39 @@ interface KeyResultItemProps {
 }
 
 export function KeyResultItem({ keyResult, objectiveId }: KeyResultItemProps) {
-  const { updateKeyResult, deleteKeyResult } = useOKR();
+  const { updateKeyResult, deleteKeyResult, objectives } = useOKR();
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(keyResult.current.toString());
 
   const handleUpdateProgress = () => {
     const newValue = parseFloat(currentValue);
     if (!isNaN(newValue)) {
+      const previousValue = keyResult.current;
       updateKeyResult(objectiveId, keyResult.id, { current: newValue });
+      const objective = objectives.find((o) => o.id === objectiveId);
+      pendo.track("key_result_progress_updated", {
+        objective_level: objective?.level || "",
+        previous_value: previousValue,
+        new_value: newValue,
+        target_value: keyResult.target,
+        unit: keyResult.unit,
+        is_completed: newValue >= keyResult.target,
+        progress_percentage: keyResult.target > 0 ? Math.round((newValue / keyResult.target) * 100) : 0,
+      });
     }
     setIsEditing(false);
   };
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this key result?')) {
+      const objective = objectives.find((o) => o.id === objectiveId);
+      const progressPct = keyResult.target > 0 ? Math.round((keyResult.current / keyResult.target) * 100) : 0;
+      pendo.track("key_result_deleted", {
+        objective_level: objective?.level || "",
+        had_progress: keyResult.current > 0,
+        progress_percentage: progressPct,
+        unit: keyResult.unit,
+      });
       deleteKeyResult(objectiveId, keyResult.id);
     }
   };
