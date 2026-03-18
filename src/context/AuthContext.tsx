@@ -20,6 +20,7 @@ interface AuthContextType {
   login: (email: string, password: string) => { success: boolean; error?: string };
   logout: () => void;
   register: (name: string, email: string, password: string, organizationName: string) => { success: boolean; error?: string };
+  deleteAccount: () => { success: boolean; error?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -96,6 +97,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSession();
   };
 
+  const deleteAccount = (): { success: boolean; error?: string } => {
+    if (!currentUser || !currentOrganization) {
+      return { success: false, error: 'No user logged in' };
+    }
+
+    const userId = currentUser.id;
+    const organizationId = currentOrganization.id;
+
+    const users = loadUsers();
+    const updatedUsers = users.filter(u => u.id !== userId);
+    saveUsers(updatedUsers);
+
+    pendo.track("user_deleted", {
+      userId: userId,
+      organizationId: organizationId,
+    });
+
+    setCurrentUser(null);
+    setCurrentOrganization(null);
+    clearSession();
+
+    return { success: true };
+  };
+
   const register = (
     name: string,
     email: string,
@@ -144,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         register,
+        deleteAccount,
       }}
     >
       {children}

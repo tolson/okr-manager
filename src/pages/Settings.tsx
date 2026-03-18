@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useOKR } from '../context/OKRContext';
 
 export function Settings() {
+  const { deleteAccount } = useAuth();
   const {
     teams,
     individuals,
@@ -16,6 +18,12 @@ export function Settings() {
   const [newTeamName, setNewTeamName] = useState('');
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState('');
+
+  const handleDeleteAccount = () => {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      deleteAccount();
+    }
+  };
 
   const [newIndividualName, setNewIndividualName] = useState('');
   const [newIndividualTeamId, setNewIndividualTeamId] = useState('');
@@ -189,6 +197,20 @@ export function Settings() {
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Delete Account Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+        <h2 className="text-lg font-semibold text-red-900 mb-2">Delete Account</h2>
+        <p className="text-gray-600 text-sm mb-4">
+          Permanently delete your account and all associated data. This action cannot be undone.
+        </p>
+        <button
+          onClick={handleDeleteAccount}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Delete Account
+        </button>
       </div>
 
       {/* Individuals Section */}
