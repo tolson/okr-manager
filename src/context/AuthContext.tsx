@@ -46,6 +46,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  useEffect(() => {
+    if (currentUser && currentOrganization) {
+      pendo.initialize({
+        visitor: {
+          id: currentUser.id,
+          email: currentUser.email,
+          full_name: currentUser.name,
+          role: currentUser.role,
+          organizationId: currentUser.organizationId,
+        },
+        account: {
+          id: currentOrganization.id,
+          name: currentOrganization.name,
+        },
+      });
+    }
+  }, [currentUser, currentOrganization]);
+
   const login = (email: string, password: string): { success: boolean; error?: string } => {
     const users = loadUsers();
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());

@@ -1,8 +1,71 @@
 import { useOKR } from '../context/OKRContext';
 import { ProgressBar } from '../components/common/ProgressBar';
+import type { Objective } from '../types';
 
 export function Dashboard() {
-  const { objectives, selectedQuarter } = useOKR();
+  const { objectives, selectedQuarter, getTeamById, getIndividualById } = useOKR();
+
+  const exportToMarkdown = () => {
+    const quarterObjectives = objectives.filter((o) => o.quarter === selectedQuarter);
+    const companyOKRs = quarterObjectives.filter((o) => o.level === 'company');
+    const teamOKRs = quarterObjectives.filter((o) => o.level === 'team');
+    const individualOKRs = quarterObjectives.filter((o) => o.level === 'individual');
+
+    const formatObjective = (obj: Objective, indent = '') => {
+      const progress = obj.keyResults.length > 0
+        ? Math.round(obj.keyResults.reduce((sum, kr) => sum + (kr.target > 0 ? (kr.current / kr.target) * 100 : 0), 0) / obj.keyResults.length)
+        : 0;
+
+      let md = `${indent}### ${obj.title}\n`;
+      if (obj.description) md += `${indent}${obj.description}\n`;
+      md += `${indent}**Progress:** ${progress}%\n\n`;
+
+      if (obj.keyResults.length > 0) {
+        md += `${indent}**Key Results:**\n`;
+        obj.keyResults.forEach((kr) => {
+          const krProgress = kr.target > 0 ? Math.round((kr.current / kr.target) * 100) : 0;
+          const status = krProgress >= 100 ? '[x]' : '[ ]';
+          md += `${indent}- ${status} ${kr.title}: ${kr.current}/${kr.target} ${kr.unit} (${krProgress}%)\n`;
+        });
+        md += '\n';
+      }
+      return md;
+    };
+
+    let markdown = `# OKRs - ${selectedQuarter}\n\n`;
+    markdown += `*Exported on ${new Date().toLocaleDateString()}*\n\n`;
+
+    if (companyOKRs.length > 0) {
+      markdown += `## Company Objectives\n\n`;
+      companyOKRs.forEach((obj) => { markdown += formatObjective(obj); });
+    }
+
+    if (teamOKRs.length > 0) {
+      markdown += `## Team Objectives\n\n`;
+      teamOKRs.forEach((obj) => {
+        const team = obj.teamId ? getTeamById(obj.teamId) : null;
+        if (team) markdown += `**Team: ${team.name}**\n\n`;
+        markdown += formatObjective(obj);
+      });
+    }
+
+    if (individualOKRs.length > 0) {
+      markdown += `## Individual Objectives\n\n`;
+      individualOKRs.forEach((obj) => {
+        const individual = obj.ownerId ? getIndividualById(obj.ownerId) : null;
+        if (individual) markdown += `**Owner: ${individual.name}**\n\n`;
+        markdown += formatObjective(obj);
+      });
+    }
+
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `okrs-${selectedQuarter.replace(' ', '-').toLowerCase()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const quarterObjectives = objectives.filter((o) => o.quarter === selectedQuarter);
 
