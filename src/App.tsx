@@ -10,6 +10,7 @@ import { AlignmentView } from './pages/AlignmentView';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ChatWidget } from './components/Chat/ChatWidget';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -68,6 +69,7 @@ function AppRoutes() {
                   </Routes>
                 </main>
               </div>
+              <ChatWidget />
             </OKRProvider>
           </ProtectedRoute>
         }
