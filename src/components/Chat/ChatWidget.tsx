@@ -11,6 +11,7 @@ interface Message {
 }
 
 const API_KEY_STORAGE = 'groq-api-key';
+const PENDO_AGENT_ID = 'KM5FWriohI4cYTLfhiOn0YCG6qw';
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +22,7 @@ export function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const conversationIdRef = useRef(crypto.randomUUID());
 
   const { objectives, teams, individuals, selectedQuarter } = useOKR();
   const { currentUser, currentOrganization } = useAuth();
@@ -65,6 +67,16 @@ export function ChatWidget() {
     setError('');
     setIsLoading(true);
 
+    const promptMessageId = crypto.randomUUID();
+    if (typeof pendo !== 'undefined') {
+      pendo.trackAgent("prompt", {
+        agentId: PENDO_AGENT_ID,
+        conversationId: conversationIdRef.current,
+        messageId: promptMessageId,
+        content: trimmed,
+      });
+    }
+
     try {
       const systemPrompt = buildSystemPrompt({
         objectives,
@@ -83,6 +95,15 @@ export function ChatWidget() {
 
       const response = await sendChatMessage(history, apiKey);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+
+      if (typeof pendo !== 'undefined') {
+        pendo.trackAgent("agent_response", {
+          agentId: PENDO_AGENT_ID,
+          conversationId: conversationIdRef.current,
+          messageId: crypto.randomUUID(),
+          content: response,
+        });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
       setError(msg);
