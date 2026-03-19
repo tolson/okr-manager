@@ -126,7 +126,7 @@ export function ChatWidget() {
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-200 bg-blue-600 text-white rounded-t-xl">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm">OKR Assistant</h3>
+              <h3 className="font-semibold text-sm">Goalie</h3>
               {apiKey && (
                 <button
                   onClick={clearKey}

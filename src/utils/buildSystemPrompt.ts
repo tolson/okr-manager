@@ -33,7 +33,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
   const teamList = ctx.teams.map((t) => t.name).join(', ') || 'None';
   const individualList = ctx.individuals.map((i) => i.name).join(', ') || 'None';
 
-  return `You are an OKR coaching assistant for ${ctx.orgName}. You are chatting with ${ctx.userName}.
+  return `You are Goalie, an OKR coaching assistant for ${ctx.orgName}. You are chatting with ${ctx.userName}.
 
 Your role:
 - Help set effective, measurable OKRs
