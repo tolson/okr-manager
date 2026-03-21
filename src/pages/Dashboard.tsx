@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useOKR } from '../context/OKRContext';
 import { ProgressBar } from '../components/common/ProgressBar';
+import { Modal } from '../components/common/Modal';
 import type { Objective } from '../types';
 
 export function Dashboard() {
   const { objectives, selectedQuarter, getTeamById, getIndividualById } = useOKR();
+  const [showPreview, setShowPreview] = useState(false);
 
   const exportToMarkdown = () => {
     const quarterObjectives = objectives.filter((o) => o.quarter === selectedQuarter);
@@ -154,13 +157,6 @@ export function Dashboard() {
       }
     });
 
-    window.pendo?.track("okr_report_viewed", {
-      quarter: selectedQuarter,
-      companyCount: companyOKRs.length,
-      teamCount: teamOKRs.length,
-      individualCount: individualOKRs.length,
-    });
-
     if (window.pendo) {
       window.pendo.track("okr_exported", {
         quarter: selectedQuarter,
@@ -208,12 +204,28 @@ export function Dashboard() {
           <p className="text-gray-600 mt-1">Overview for {selectedQuarter}</p>
         </div>
         {quarterObjectives.length > 0 && (
-          <button
-            onClick={exportToMarkdown}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Export to Markdown
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setShowPreview(true);
+                window.pendo?.track("okr_report_viewed", {
+                  quarter: selectedQuarter,
+                  companyCount: companyOKRs.length,
+                  teamCount: teamOKRs.length,
+                  individualCount: individualOKRs.length,
+                });
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              View Report
+            </button>
+            <button
+              onClick={exportToMarkdown}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Export to Markdown
+            </button>
+          </div>
         )}
       </div>
 
@@ -268,6 +280,56 @@ export function Dashboard() {
           </p>
         </div>
       )}
+
+      <Modal isOpen={showPreview} onClose={() => setShowPreview(false)} title={`OKR Report - ${selectedQuarter}`}>
+        <div className="prose prose-sm max-h-96 overflow-y-auto">
+          {companyOKRs.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold">Company Objectives</h3>
+              {companyOKRs.map((obj) => (
+                <div key={obj.id} className="ml-2 mb-2">
+                  <p className="font-medium">{obj.title}</p>
+                  {obj.keyResults.map((kr) => (
+                    <p key={kr.id} className="text-sm text-gray-600 ml-2">
+                      {kr.title}: {kr.current}/{kr.target} {kr.unit}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+          {teamOKRs.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold">Team Objectives</h3>
+              {teamOKRs.map((obj) => (
+                <div key={obj.id} className="ml-2 mb-2">
+                  <p className="font-medium">{obj.title}</p>
+                  {obj.keyResults.map((kr) => (
+                    <p key={kr.id} className="text-sm text-gray-600 ml-2">
+                      {kr.title}: {kr.current}/{kr.target} {kr.unit}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+          {individualOKRs.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold">Individual Objectives</h3>
+              {individualOKRs.map((obj) => (
+                <div key={obj.id} className="ml-2 mb-2">
+                  <p className="font-medium">{obj.title}</p>
+                  {obj.keyResults.map((kr) => (
+                    <p key={kr.id} className="text-sm text-gray-600 ml-2">
+                      {kr.title}: {kr.current}/{kr.target} {kr.unit}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }
