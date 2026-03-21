@@ -154,6 +154,13 @@ export function Dashboard() {
       }
     });
 
+    window.pendo?.track("okr_report_viewed", {
+      quarter: selectedQuarter,
+      companyCount: companyOKRs.length,
+      teamCount: teamOKRs.length,
+      individualCount: individualOKRs.length,
+    });
+
     if (window.pendo) {
       window.pendo.track("okr_exported", {
         quarter: selectedQuarter,
