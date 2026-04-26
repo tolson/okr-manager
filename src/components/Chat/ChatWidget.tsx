@@ -47,6 +47,9 @@ export function ChatWidget() {
     localStorage.setItem(API_KEY_STORAGE, trimmed);
     setApiKey(trimmed);
     setKeyInput('');
+    pendo.track("ai_chat_api_key_configured", {
+      has_existing_messages: messages.length > 0,
+    });
   };
 
   const clearKey = () => {
@@ -83,6 +86,15 @@ export function ChatWidget() {
 
       const response = await sendChatMessage(history, apiKey);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+      const quarterObjectives = objectives.filter((o) => o.quarter === selectedQuarter);
+      pendo.track("ai_chat_message_sent", {
+        message_length: trimmed.length,
+        conversation_message_count: messages.length + 2,
+        quarter: selectedQuarter,
+        objectives_count_in_context: quarterObjectives.length,
+        response_length: response.length,
+        is_first_message: messages.length === 0,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
       setError(msg);

@@ -33,6 +33,9 @@ export function Register() {
       });
       navigate('/');
     } else {
+      pendo.track("user_registration_failed", {
+        error_reason: result.error || "Registration failed",
+      });
       setError(result.error || 'Registration failed');
     }
   };
