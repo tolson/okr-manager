@@ -12,6 +12,8 @@ interface Message {
 
 const API_KEY_STORAGE = 'groq-api-key';
 
+const PENDO_AGENT_ID = '175tdkEo-JuHMRNosvR28MCawKc';
+
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,6 +23,7 @@ export function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const conversationIdRef = useRef(crypto.randomUUID());
 
   const { objectives, teams, individuals, selectedQuarter } = useOKR();
   const { currentUser, currentOrganization } = useAuth();
@@ -53,6 +56,7 @@ export function ChatWidget() {
     localStorage.removeItem(API_KEY_STORAGE);
     setApiKey('');
     setMessages([]);
+    conversationIdRef.current = crypto.randomUUID();
   };
 
   const handleSend = async () => {
@@ -60,10 +64,21 @@ export function ChatWidget() {
     if (!trimmed || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: trimmed };
+    const promptMessageId = crypto.randomUUID();
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setError('');
     setIsLoading(true);
+
+    if (typeof pendo !== 'undefined') {
+      pendo.trackAgent('prompt', {
+        agentId: PENDO_AGENT_ID,
+        conversationId: conversationIdRef.current,
+        messageId: promptMessageId,
+        content: trimmed,
+        suggestedPrompt: false,
+      });
+    }
 
     try {
       const systemPrompt = buildSystemPrompt({
@@ -83,6 +98,16 @@ export function ChatWidget() {
 
       const response = await sendChatMessage(history, apiKey);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+
+      if (typeof pendo !== 'undefined') {
+        pendo.trackAgent('agent_response', {
+          agentId: PENDO_AGENT_ID,
+          conversationId: conversationIdRef.current,
+          messageId: crypto.randomUUID(),
+          content: response,
+          modelUsed: 'llama-3.3-70b-versatile',
+        });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
       setError(msg);
