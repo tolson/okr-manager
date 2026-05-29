@@ -17,6 +17,14 @@ export function ObjectiveCard({ objective, onEdit }: ObjectiveCardProps) {
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this objective?')) {
+      const parentObj = objective.parentId ? objectives.find((o) => o.id === objective.parentId) : null;
+      pendo.track("objective_deleted", {
+        objective_level: objective.level,
+        quarter: objective.quarter,
+        key_result_count: objective.keyResults.length,
+        had_progress: objective.keyResults.some((kr) => kr.current > 0),
+        had_alignment: !!objective.parentId,
+      });
       deleteObjective(objective.id);
     }
   };

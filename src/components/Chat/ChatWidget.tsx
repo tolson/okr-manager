@@ -83,9 +83,21 @@ export function ChatWidget() {
 
       const response = await sendChatMessage(history, apiKey);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+      pendo.track("ai_chat_message_sent", {
+        message_length: trimmed.length,
+        conversation_length: messages.length,
+        quarter: selectedQuarter,
+        objectives_count: objectives.length,
+        response_length: response.length,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
       setError(msg);
+      pendo.track("ai_chat_error", {
+        error_type: msg.includes('Invalid API key') ? 'invalid_api_key' : msg.includes('rate limit') ? 'rate_limit' : 'api_error',
+        error_message: msg.substring(0, 100),
+        conversation_length: messages.length,
+      });
       if (msg.includes('Invalid API key')) {
         clearKey();
       }
