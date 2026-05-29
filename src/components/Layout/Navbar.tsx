@@ -10,6 +10,7 @@ export function Navbar() {
   const quarters = getQuarterOptions();
 
   const handleLogout = () => {
+    pendo.track("user_logged_out", {});
     logout();
     navigate('/login');
   };
