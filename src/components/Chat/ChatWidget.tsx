@@ -5,6 +5,8 @@ import { sendChatMessage } from '../../utils/chatApi';
 import { buildSystemPrompt } from '../../utils/buildSystemPrompt';
 import { ChatMessage } from './ChatMessage';
 
+const PENDO_AGENT_ID = 'D-Z_qL7HECTnCyQd8chcm2FByP8';
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -21,6 +23,7 @@ export function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const conversationIdRef = useRef(crypto.randomUUID());
 
   const { objectives, teams, individuals, selectedQuarter } = useOKR();
   const { currentUser, currentOrganization } = useAuth();
@@ -65,6 +68,16 @@ export function ChatWidget() {
     setError('');
     setIsLoading(true);
 
+    const promptMessageId = crypto.randomUUID();
+
+    pendo.trackAgent("prompt", {
+      agentId: PENDO_AGENT_ID,
+      conversationId: conversationIdRef.current,
+      messageId: promptMessageId,
+      content: trimmed,
+      suggestedPrompt: false,
+    });
+
     try {
       const systemPrompt = buildSystemPrompt({
         objectives,
@@ -83,6 +96,14 @@ export function ChatWidget() {
 
       const response = await sendChatMessage(history, apiKey);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+
+      pendo.trackAgent("agent_response", {
+        agentId: PENDO_AGENT_ID,
+        conversationId: conversationIdRef.current,
+        messageId: crypto.randomUUID(),
+        content: response,
+        modelUsed: "llama-3.3-70b-versatile",
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
       setError(msg);
